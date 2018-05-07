@@ -6,8 +6,16 @@ import microbitImage from './microbit.png';
 import wedoImage from './wedo.png';
 import ev3Image from './ev3.png';
 import boostImage from './boost.png';
+import thymioImage from './thymio.png';
 
 export default [
+    {
+        name: 'Thymio',
+        extensionURL: 'thymio',
+        iconURL: thymioImage,
+        description: 'Connect your Thymio.',
+        featured: true
+    },
     {
         name: 'Music',
         extensionURL: 'music',
