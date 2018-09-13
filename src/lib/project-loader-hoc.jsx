@@ -1,13 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import {connect} from 'react-redux';
+
+import {setProjectId} from '../reducers/project-id';
 
 import analytics from './analytics';
 import log from './log';
 import storage from './storage';
 
-/* Higher Order Component to provide behavior for loading projects by id from
- * the window's hash (#this part in the url) or by projectId prop passed in from
- * the parent (i.e. scratch-www)
+/* Higher Order Component to provide behavior for loading projects by id. If
+ * there's no id, the default project is loaded.
  * @param {React.Component} WrappedComponent component to receive projectData prop
  * @returns {React.Component} component with project loading behavior
  */
@@ -15,56 +17,63 @@ const ProjectLoaderHOC = function (WrappedComponent) {
     class ProjectLoaderComponent extends React.Component {
         constructor (props) {
             super(props);
-            this.fetchProjectId = this.fetchProjectId.bind(this);
             this.updateProject = this.updateProject.bind(this);
             this.state = {
-                projectId: null,
                 projectData: null,
                 fetchingProject: false
             };
+            storage.setProjectHost(props.projectHost);
+            storage.setAssetHost(props.assetHost);
+            props.setProjectId(props.projectId);
+            if (
+                props.projectId !== '' &&
+                props.projectId !== null &&
+                typeof props.projectId !== 'undefined'
+            ) {
+                this.updateProject(props.projectId);
+            }
         }
-        componentDidMount () {
-            window.addEventListener('hashchange', this.updateProject);
-            this.updateProject();
-        }
-        componentWillUpdate (nextProps, nextState) {
-            if (this.state.projectId !== nextState.projectId) {
+        componentWillUpdate (nextProps) {
+            if (this.props.projectHost !== nextProps.projectHost) {
+                storage.setProjectHost(nextProps.projectHost);
+            }
+            if (this.props.assetHost !== nextProps.assetHost) {
+                storage.setAssetHost(nextProps.assetHost);
+            }
+            if (this.props.projectId !== nextProps.projectId) {
+                this.props.setProjectId(nextProps.projectId);
                 this.setState({fetchingProject: true}, () => {
-                    storage
-                        .load(storage.AssetType.Project, this.state.projectId, storage.DataFormat.JSON)
-                        .then(projectAsset => projectAsset && this.setState({
-                            projectData: projectAsset.data,
-                            fetchingProject: false
-                        }))
-                        .catch(err => log.error(err));
+                    this.updateProject(nextProps.projectId);
                 });
             }
         }
-        componentWillUnmount () {
-            window.removeEventListener('hashchange', this.updateProject);
-        }
-        fetchProjectId () {
-            return window.location.hash.substring(1);
-        }
-        updateProject () {
-            let projectId = this.props.projectId || this.fetchProjectId();
-            if (projectId !== this.state.projectId) {
-                if (projectId.length < 1) projectId = 0;
-                this.setState({projectId: projectId});
-
-                if (projectId !== 0) {
-                    analytics.event({
-                        category: 'project',
-                        action: 'Load Project',
-                        value: projectId,
-                        nonInteraction: true
-                    });
-                }
-            }
+        updateProject (projectId) {
+            storage
+                .load(storage.AssetType.Project, projectId, storage.DataFormat.JSON)
+                .then(projectAsset => projectAsset && this.setState({
+                    projectData: projectAsset.data,
+                    fetchingProject: false
+                }))
+                .then(() => {
+                    if (projectId !== 0) {
+                        analytics.event({
+                            category: 'project',
+                            action: 'Load Project',
+                            label: projectId,
+                            nonInteraction: true
+                        });
+                    }
+                })
+                .catch(err => log.error(err));
         }
         render () {
             const {
-                projectId, // eslint-disable-line no-unused-vars
+                /* eslint-disable no-unused-vars */
+                assetHost,
+                projectHost,
+                projectId,
+                setProjectId: setProjectIdProp,
+                /* eslint-enable no-unused-vars */
                 ...componentProps
             } = this.props;
             if (!this.state.projectData) return null;
@@ -78,10 +87,24 @@ const ProjectLoaderHOC = function (WrappedComponent) {
         }
     }
     ProjectLoaderComponent.propTypes = {
-        projectId: PropTypes.string
+        assetHost: PropTypes.string,
+        projectHost: PropTypes.string,
+        projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+        setProjectId: PropTypes.func
+    };
+    ProjectLoaderComponent.defaultProps = {
+        assetHost: 'https://assets.scratch.mit.edu',
+        projectHost: 'https://projects.scratch.mit.edu',
+        projectId: 0
     };
 
-    return ProjectLoaderComponent;
+    const mapStateToProps = () => ({});
+
+    const mapDispatchToProps = dispatch => ({
+        setProjectId: id => dispatch(setProjectId(id))
+    });
+
+    return connect(mapStateToProps, mapDispatchToProps)(ProjectLoaderComponent);
 };
 
 export {
