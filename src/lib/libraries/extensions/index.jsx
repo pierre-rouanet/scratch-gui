@@ -181,14 +181,14 @@ export default [
         iconURL: thymioImage,
         description: (
             <FormattedMessage
-                defaultMessage="Thymio !"
+                defaultMessage="Connect Thymio Web Bridge, use Chrome please"
                 description="Description for the 'Thymio' extension"
                 id="gui.extension.thymio.description"
             />
         ),
         featured: true,
         disabled: false,
-        helpLink: 'https://thymio.org'
+        helpLink: 'https://www.thymio.org'
 
     }
 ];
