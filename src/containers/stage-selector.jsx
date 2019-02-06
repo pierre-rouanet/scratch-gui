@@ -10,8 +10,10 @@ import {activateTab, COSTUMES_TAB_INDEX} from '../reducers/editor-tab';
 import {setHoveredSprite} from '../reducers/hovered-target';
 import DragConstants from '../lib/drag-constants';
 import DropAreaHOC from '../lib/drop-area-hoc.jsx';
+import ThrottledPropertyHOC from '../lib/throttled-property-hoc.jsx';
 import {emptyCostume} from '../lib/empty-assets';
 import sharedMessages from '../lib/shared-messages';
+import {fetchCode} from '../lib/backpack-api';
 
 import StageSelectorComponent from '../components/stage-selector/stage-selector.jsx';
 
@@ -22,10 +24,13 @@ const dragTypes = [
     DragConstants.COSTUME,
     DragConstants.SOUND,
     DragConstants.BACKPACK_COSTUME,
-    DragConstants.BACKPACK_SOUND
+    DragConstants.BACKPACK_SOUND,
+    DragConstants.BACKPACK_CODE
 ];
 
-const DroppableStage = DropAreaHOC(dragTypes)(StageSelectorComponent);
+const DroppableThrottledStage = DropAreaHOC(dragTypes)(
+    ThrottledPropertyHOC('url', 500)(StageSelectorComponent)
+);
 
 class StageSelector extends React.Component {
     constructor (props) {
@@ -99,6 +104,12 @@ class StageSelector extends React.Component {
                 md5: dragInfo.payload.body,
                 name: dragInfo.payload.name
             }, this.props.id);
+        } else if (dragInfo.dragType === DragConstants.BACKPACK_CODE) {
+            fetchCode(dragInfo.payload.bodyUrl)
+                .then(blocks => {
+                    this.props.vm.shareBlocksToTarget(blocks, this.props.id);
+                    this.props.vm.refreshWorkspace();
+                });
         }
     }
     setFileInput (input) {
@@ -106,9 +117,9 @@ class StageSelector extends React.Component {
     }
     render () {
         const componentProps = omit(this.props, [
-            'assetId', 'dispatchSetHoveredSprite', 'id', 'intl', 'onActivateTab', 'onSelect']);
+            'asset', 'dispatchSetHoveredSprite', 'id', 'intl', 'onActivateTab', 'onSelect']);
         return (
-            <DroppableStage
+            <DroppableThrottledStage
                 fileInputRef={this.setFileInput}
                 onBackdropFileUpload={this.handleBackdropUpload}
                 onBackdropFileUploadClick={this.handleFileUploadClick}
@@ -130,8 +141,8 @@ StageSelector.propTypes = {
     onSelect: PropTypes.func
 };
 
-const mapStateToProps = (state, {assetId, id}) => ({
-    url: assetId && state.scratchGui.vm.runtime.storage.get(assetId).encodeDataURI(),
+const mapStateToProps = (state, {asset, id}) => ({
+    url: asset && asset.encodeDataURI(),
     vm: state.scratchGui.vm,
     receivedBlocks: state.scratchGui.hoveredTarget.receivedBlocks &&
             state.scratchGui.hoveredTarget.sprite === id,

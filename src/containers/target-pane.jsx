@@ -9,7 +9,7 @@ import {
     closeSpriteLibrary
 } from '../reducers/modals';
 
-import {activateTab, COSTUMES_TAB_INDEX} from '../reducers/editor-tab';
+import {activateTab, COSTUMES_TAB_INDEX, BLOCKS_TAB_INDEX} from '../reducers/editor-tab';
 import {setReceivedBlocks} from '../reducers/hovered-target';
 import {setRestore} from '../reducers/restore-deletion';
 import DragConstants from '../lib/drag-constants';
@@ -18,11 +18,15 @@ import spriteLibraryContent from '../lib/libraries/sprites.json';
 import {handleFileUpload, spriteUpload} from '../lib/file-uploader.js';
 import sharedMessages from '../lib/shared-messages';
 import {emptySprite} from '../lib/empty-assets';
+import {highlightTarget} from '../reducers/targets';
+import {fetchSprite, fetchCode} from '../lib/backpack-api';
+import randomizeSpritePosition from '../lib/randomize-sprite-position';
 
 class TargetPane extends React.Component {
     constructor (props) {
         super(props);
         bindAll(this, [
+            'handleActivateBlocksTab',
             'handleBlockDragEnd',
             'handleChangeSpriteRotationStyle',
             'handleChangeSpriteDirection',
@@ -72,7 +76,9 @@ class TargetPane extends React.Component {
         this.props.vm.postSpriteInfo({y});
     }
     handleDeleteSprite (id) {
-        const restoreFun = this.props.vm.deleteSprite(id);
+        const restoreSprite = this.props.vm.deleteSprite(id);
+        const restoreFun = () => restoreSprite().then(this.handleActivateBlocksTab);
+
         this.props.dispatchUpdateRestore({
             restoreFun: restoreFun,
             deletedItem: 'Sprite'
@@ -106,10 +112,15 @@ class TargetPane extends React.Component {
     }
     handleSelectSprite (id) {
         this.props.vm.setEditingTarget(id);
+        if (this.props.stage && id !== this.props.stage.id) {
+            this.props.onHighlightTarget(id);
+        }
     }
     handleSurpriseSpriteClick () {
         const item = spriteLibraryContent[Math.floor(Math.random() * spriteLibraryContent.length)];
-        this.props.vm.addSprite(JSON.stringify(item.json));
+        randomizeSpritePosition(item);
+        this.props.vm.addSprite(JSON.stringify(item.json))
+            .then(this.handleActivateBlocksTab);
     }
     handlePaintSpriteClick () {
         const formatMessage = this.props.intl.formatMessage;
@@ -124,8 +135,12 @@ class TargetPane extends React.Component {
             });
         });
     }
+    handleActivateBlocksTab () {
+        this.props.onActivateTab(BLOCKS_TAB_INDEX);
+    }
     handleNewSprite (spriteJSONString) {
-        this.props.vm.addSprite(spriteJSONString);
+        this.props.vm.addSprite(spriteJSONString)
+            .then(this.handleActivateBlocksTab);
     }
     handleFileUploadClick () {
         this.fileInput.click();
@@ -154,8 +169,7 @@ class TargetPane extends React.Component {
         } else if (dragInfo.dragType === DragConstants.BACKPACK_SPRITE) {
             // TODO storage does not have a way of loading zips right now, and may never need it.
             // So for now just grab the zip manually.
-            fetch(dragInfo.payload.bodyUrl)
-                .then(response => response.arrayBuffer())
+            fetchSprite(dragInfo.payload.bodyUrl)
                 .then(sprite3Zip => this.props.vm.addSprite(sprite3Zip));
         } else if (targetId) {
             // Something is being dragged over one of the sprite tiles or the backdrop.
@@ -180,6 +194,12 @@ class TargetPane extends React.Component {
                     md5: dragInfo.payload.body,
                     name: dragInfo.payload.name
                 }, targetId);
+            } else if (dragInfo.dragType === DragConstants.BACKPACK_CODE) {
+                fetchCode(dragInfo.payload.bodyUrl)
+                    .then(blocks => {
+                        this.props.vm.shareBlocksToTarget(blocks, targetId);
+                        this.props.vm.refreshWorkspace();
+                    });
             }
         }
     }
@@ -187,6 +207,7 @@ class TargetPane extends React.Component {
         const {
             onActivateTab, // eslint-disable-line no-unused-vars
             onReceivedBlocks, // eslint-disable-line no-unused-vars
+            onHighlightTarget, // eslint-disable-line no-unused-vars
             dispatchUpdateRestore, // eslint-disable-line no-unused-vars
             ...componentProps
         } = this.props;
@@ -194,6 +215,7 @@ class TargetPane extends React.Component {
             <TargetPaneComponent
                 {...componentProps}
                 fileInputRef={this.setFileInput}
+                onActivateBlocksTab={this.handleActivateBlocksTab}
                 onChangeSpriteDirection={this.handleChangeSpriteDirection}
                 onChangeSpriteName={this.handleChangeSpriteName}
                 onChangeSpriteRotationStyle={this.handleChangeSpriteRotationStyle}
@@ -217,6 +239,7 @@ class TargetPane extends React.Component {
 
 const {
     onSelectSprite, // eslint-disable-line no-unused-vars
+    onActivateBlocksTab, // eslint-disable-line no-unused-vars
     ...targetPaneProps
 } = TargetPaneComponent.propTypes;
 
@@ -228,19 +251,12 @@ TargetPane.propTypes = {
 const mapStateToProps = state => ({
     editingTarget: state.scratchGui.targets.editingTarget,
     hoveredTarget: state.scratchGui.hoveredTarget,
-    sprites: Object.keys(state.scratchGui.targets.sprites).reduce((sprites, k) => {
-        let {direction, size, x, y, ...sprite} = state.scratchGui.targets.sprites[k];
-        if (typeof direction !== 'undefined') direction = Math.round(direction);
-        if (typeof x !== 'undefined') x = Math.round(x);
-        if (typeof y !== 'undefined') y = Math.round(y);
-        if (typeof size !== 'undefined') size = Math.round(size);
-        sprites[k] = {...sprite, direction, size, x, y};
-        return sprites;
-    }, {}),
+    sprites: state.scratchGui.targets.sprites,
     stage: state.scratchGui.targets.stage,
     raiseSprites: state.scratchGui.blockDrag,
     spriteLibraryVisible: state.scratchGui.modals.spriteLibrary
 });
+
 const mapDispatchToProps = dispatch => ({
     onNewSpriteClick: e => {
         e.preventDefault();
@@ -257,6 +273,9 @@ const mapDispatchToProps = dispatch => ({
     },
     dispatchUpdateRestore: restoreState => {
         dispatch(setRestore(restoreState));
+    },
+    onHighlightTarget: id => {
+        dispatch(highlightTarget(id));
     }
 });
 
