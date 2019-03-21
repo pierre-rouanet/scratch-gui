@@ -15,6 +15,7 @@ steps:
   inputs:
     script: 'git clone https://github.com/Mobsya/scratch-vm --depth=1'
     targetType: 'inline'
+  displayName: 'Cloning scratch vm'
 
 - task: NodeTool@0
   inputs:
