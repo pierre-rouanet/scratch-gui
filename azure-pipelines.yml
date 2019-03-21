@@ -23,7 +23,7 @@ steps:
 - task: ArchiveFiles@2
   inputs:
     rootFolderOrFile: 'build'
-    archiveFile: '$(Build.ArtifactStagingDirectory)scratch-gui.tar.gz'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/scratch-gui.tar.gz'
     includeRootFolder: false
     replaceExistingArchive: true
     archiveType: 'tar'
