@@ -14,6 +14,7 @@ steps:
 - task: Bash@3
   inputs:
     script: 'git clone https://github.com/Mobsya/scratch-vm --depth=1'
+    targetType: 'inline'
 
 - task: NodeTool@0
   inputs:
