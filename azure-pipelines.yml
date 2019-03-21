@@ -35,7 +35,7 @@ steps:
 
 - task: ArchiveFiles@2
   inputs:
-    rootFolderOrFile: 'build'
+    rootFolderOrFile: 'scratch'
     archiveFile: '$(Build.ArtifactStagingDirectory)/scratch-gui.tar.gz'
     includeRootFolder: true
     replaceExistingArchive: true
