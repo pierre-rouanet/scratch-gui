@@ -10,6 +10,11 @@ pool:
   vmImage: 'Ubuntu-16.04'
 
 steps:
+
+- task: Bash@3
+  inputs:
+    script: 'git clone https://github.com/Mobsya/scratch-vm --depth=1'
+
 - task: NodeTool@0
   inputs:
     versionSpec: '8.x'
