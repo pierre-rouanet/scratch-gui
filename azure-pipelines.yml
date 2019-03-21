@@ -27,11 +27,17 @@ steps:
     npm run build
   displayName: 'npm install and build'
 
+- task: Bash@3
+  inputs:
+    script: 'mv build scratch'
+    targetType: 'inline'
+  displayName: 'Renaming build directory'
+
 - task: ArchiveFiles@2
   inputs:
     rootFolderOrFile: 'build'
     archiveFile: '$(Build.ArtifactStagingDirectory)/scratch-gui.tar.gz'
-    includeRootFolder: false
+    includeRootFolder: true
     replaceExistingArchive: true
     archiveType: 'tar'
   displayName: 'compressing build directory'
