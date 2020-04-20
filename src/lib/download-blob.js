@@ -7,7 +7,17 @@ export default (filename, blob) => {
         navigator.msSaveOrOpenBlob(blob, filename);
         return;
     }
-
+	
+	// Special use on Ipad
+	if (/ipad/i.test(navigator.userAgent)) {
+		var reader = new FileReader();
+		reader.readAsDataURL(blob);
+		reader.onloadend = function () {
+			var base64data = reader.result;
+			window.webkit.messageHandlers.blobReady.postMessage({data: base64data, filename: filename});
+		}
+	}
+		 
     const url = window.URL.createObjectURL(blob);
     downloadLink.href = url;
     downloadLink.download = filename;
