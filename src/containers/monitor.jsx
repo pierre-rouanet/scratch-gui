@@ -8,7 +8,7 @@ import MonitorComponent, {monitorModes} from '../components/monitor/monitor.jsx'
 import {addMonitorRect, getInitialPosition, resizeMonitorRect, removeMonitorRect} from '../reducers/monitor-layout';
 import {getVariable, setVariableValue} from '../lib/variable-utils';
 import importCSV from '../lib/import-csv';
-import download from '../lib/download-url';
+import downloadBlob from '../lib/download-blob';
 
 import {connect} from 'react-redux';
 import {Map} from 'immutable';
@@ -156,7 +156,8 @@ class Monitor extends React.Component {
         const {vm, targetId, id: variableId} = this.props;
         const variable = getVariable(vm, targetId, variableId);
         const text = variable.value.join('\r\n');
-        download(`${variable.name}.txt`, `data:text/plain;charset=utf-8,${encodeURIComponent(text)}`);
+        const blob = new Blob([text], {type: 'text/plain;charset=utf-8'});
+        downloadBlob(`${variable.name}.txt`, blob);
     }
     render () {
         const monitorProps = monitorAdapter(this.props);
@@ -168,6 +169,7 @@ class Monitor extends React.Component {
                 {...monitorProps}
                 draggable={this.props.draggable}
                 height={this.props.height}
+                isDiscrete={this.props.isDiscrete}
                 max={this.props.max}
                 min={this.props.min}
                 mode={this.props.mode}
@@ -191,6 +193,7 @@ Monitor.propTypes = {
     height: PropTypes.number,
     id: PropTypes.string.isRequired,
     intl: intlShape,
+    isDiscrete: PropTypes.bool,
     max: PropTypes.number,
     min: PropTypes.number,
     mode: PropTypes.oneOf(['default', 'slider', 'large', 'list']),

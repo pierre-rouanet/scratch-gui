@@ -1,6 +1,9 @@
 # scratch-gui
 #### Scratch GUI is a set of React components that comprise the interface for creating and running Scratch 3.0 projects
 
+[![Build Status](https://dev.azure.com/mobsya/Thymio%20Software%20Suite/_apis/build/status/Mobsya.scratch-gui?branchName=develop)](https://dev.azure.com/mobsya/Thymio%20Software%20Suite/_build/latest?definitionId=4&branchName=develop)
+
+
 [![Build Status](https://travis-ci.com/LLK/scratch-gui.svg?token=Yfq2ryN1BwaxDME69Lnc&branch=master)](https://travis-ci.com/LLK/scratch-gui)
 [![Greenkeeper badge](https://badges.greenkeeper.io/LLK/scratch-gui.svg)](https://greenkeeper.io/)
 

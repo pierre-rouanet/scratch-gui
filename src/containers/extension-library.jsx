@@ -60,7 +60,7 @@ class ExtensionLibrary extends React.PureComponent {
         });
     }
     render () {
-        const extensionLibraryThumbnailData = extensionLibraryContent.map(extension => ({
+        const extensionLibraryThumbnailData = extensionLibraryContent.filter(extension => extension.extensionId != 'thymio').map(extension => ({
             rawURL: extension.iconURL || extensionIcon,
             ...extension
         }));

@@ -1,0 +1,61 @@
+# Node.js
+# Build a general Node.js project with npm.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
+
+trigger:
+- develop
+
+pool:
+  vmImage: 'Ubuntu-16.04'
+
+steps:
+
+- task: Bash@3
+  inputs:
+    script: 'git clone https://github.com/Mobsya/scratch-vm --depth=1'
+    targetType: 'inline'
+    workingDirectory: $(Agent.BuildDirectory)
+  displayName: 'Cloning scratch vm'
+
+- task: NodeTool@0
+  inputs:
+    versionSpec: '8.x'
+  displayName: 'Install Node.js'
+
+- script: |
+    npm install
+    npm run build
+    npm link
+  displayName: 'npm install and build scratch-vm'
+  workingDirectory: $(Agent.BuildDirectory)/scratch-vm
+
+- script: |
+    npm install
+    npm link scratch-vm
+    npm run build
+  displayName: 'npm install and build scratch-gui'
+  workingDirectory: $(Build.SourcesDirectory)
+
+- task: Bash@3
+  inputs:
+    script: 'mv build scratch'
+    targetType: 'inline'
+  displayName: 'Renaming build directory'
+
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: 'scratch'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/scratch-gui.tar.gz'
+    includeRootFolder: true
+    replaceExistingArchive: true
+    archiveType: 'tar'
+  displayName: 'compressing build directory'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    artifactName: 'scratch-gui'
+    
+
+
