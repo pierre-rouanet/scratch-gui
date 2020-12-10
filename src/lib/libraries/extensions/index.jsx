@@ -172,7 +172,7 @@ export default [
     {
         name: 'Thymio',
         extensionId: 'thymio',
-        iconURL: thymioImage,
+        iconURL: thymioIconForURL,
         description: (
             <FormattedMessage
                 defaultMessage="Connect Thymio Web Bridge, use Chrome please"
