@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "ajv": "^6.7.0",
-    "autoprefixer": "^10.2.1",
+    "autoprefixer": "^10.2.3",
     "copy-webpack-plugin": "^7.0.0",
     "lodash.defaultsdeep": "^4.6.1",
     "postcss": "^8.2.4",

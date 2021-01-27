@@ -7,7 +7,7 @@ trigger:
 - develop
 
 pool:
-  vmImage: 'Ubuntu-16.04'
+  vmImage: 'Ubuntu-18.04'
 
 steps:
 
@@ -20,10 +20,12 @@ steps:
 
 - task: NodeTool@0
   inputs:
-    versionSpec: '10.x'
+    versionSpec: '14.x'
   displayName: 'Install Node.js'
 
 - script: |
+    node -v
+    npm -v
     npm install
     npm run build
     npm link
@@ -31,6 +33,8 @@ steps:
   workingDirectory: $(Agent.BuildDirectory)/scratch-vm
 
 - script: |
+    node -v
+    npm -v
     npm install
     npm link scratch-vm
     npm run build
